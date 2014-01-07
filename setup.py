@@ -14,6 +14,6 @@ setup(
     url='https://github.com/DRMacIver/testmachine',
     license='LICENSE.txt',
     description='Stack based automatic testcase generation',
-    long_description=open('README.md').read(),
+    long_description=open('README').read(),
     **extra
 )
