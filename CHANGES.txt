@@ -1,1 +1,3 @@
 v0.0.1, 08/01/2013 -- Initial release. Basic working prototype. Demonstrates idea, probably shouldn't be used.
+v0.0.2, 08/01/2013 -- Remove bundles of operations from core testmachine and move them into testmachine.common.
+                      Fix some issues with formatting patterns for check operations.
