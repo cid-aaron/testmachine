@@ -45,6 +45,7 @@ def associative_add(x, y, z):
 # will fail.
 machine.check(associative_add, ("floats", "floats", "floats"))
 
-# Attempt to find a falsifying example for the problem we've defined and print
-# it to stdout. If this cannot find any examples (it will), say so.
-machine.run()
+if __name__ == '__main__':
+    # Attempt to find a falsifying example for the problem we've defined and
+    # print it to stdout. If this cannot find any examples (it will), say so.
+    machine.run()

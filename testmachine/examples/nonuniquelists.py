@@ -26,5 +26,6 @@ machine.check(
     lambda s: len(s) == len(set(s)), argspec=("intlists",), name="unique"
 )
 
-# Find a program that creates a list with non-unique elements.
-machine.run()
+if __name__ == '__main__':
+    # Find a program that creates a list with non-unique elements.
+    machine.run()

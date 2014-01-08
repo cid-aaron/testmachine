@@ -87,4 +87,5 @@ machine.check(
     pattern="assert %s.balanced()"
 )
 
-machine.run()
+if __name__ == '__main__':
+    machine.run()

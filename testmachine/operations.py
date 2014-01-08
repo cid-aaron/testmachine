@@ -136,7 +136,10 @@ class UnaryOperator(ReadAndWrite):
 class Check(Operation):
     def __init__(self, test, argspec, name=None, pattern=None):
         name = name or test.__name__
-        pattern = pattern or ("assert %s(%%s)" % (name,))
+        if not pattern:
+            arg_string = ', '.join(["%s"] * len(argspec))
+            pattern = "assert %s(%s)" % (name, arg_string)
+
         super(Check, self).__init__(
             Counter(argspec).items(), name=name, pattern=pattern
         )
