@@ -28,10 +28,6 @@ def arithmetic_operations(machine, varstack):
     machine.binary_operation(operator.add, varstack, "+")
     machine.binary_operation(operator.sub, varstack, "-")
     machine.binary_operation(operator.mul, varstack, "*")
-    machine.binary_operation(
-        operator.div, varstack, "/",
-        precondition=lambda x, y: bool(y)
-    )
     machine.unary_operation(operator.neg, varstack, "-")
 
 
