@@ -42,9 +42,9 @@ on its own).
 Usage examples
 ==============
 
-1. `Demonstrating that floating point addition is non-associative <https://github.com/DRMacIver/testmachine/blob/master/examples/non-associative.py>`_
-2. `Finding lists with duplicate elements <https://github.com/DRMacIver/testmachine/blob/master/examples/non-unique.py>`_
-3. `Constructing unbalanced trees <https://github.com/DRMacIver/testmachine/blob/master/examples/unbalanced-trees.py>`_
+1. `Demonstrating that floating point addition is non-associative <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/floats.py>`_
+2. `Finding lists with duplicate elements <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/nonuniquelists.py>`_
+3. `Constructing unbalanced trees <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/unbalancedtrees.py>`_
 
 ======
 Status
