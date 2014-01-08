@@ -49,7 +49,7 @@ class Operation(OperationOrLanguage):
 class ReadAndWrite(Operation):
     def __init__(self, function, argorder, target=None, name=None):
         super(ReadAndWrite, self).__init__(
-            Counter(s for ss in (argorder, (target,)) for s in ss).items(),
+            Counter(argorder).items(),
             name or function.__name__
         )
         self.function = function
