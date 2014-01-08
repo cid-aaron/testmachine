@@ -1,3 +1,4 @@
+from __future__ import print_function
 from random import Random
 from contextlib import contextmanager
 from .operations import (
@@ -171,7 +172,7 @@ class TestMachine(object):
     def inform(self, message, *args, **kwargs):
         assert not (args and kwargs)
         if self.print_output:
-            print (message % (args or kwargs))
+            print(message % (args or kwargs))
 
     def operation(self, *args, **kwargs):
         """
@@ -251,7 +252,7 @@ class TestMachine(object):
         examples_found = 0
         best_example = None
 
-        for _ in xrange(self.n_iters):
+        for _ in range(self.n_iters):
             program = []
             context = RunContext()
             for _ in xrange(self.prog_length):
