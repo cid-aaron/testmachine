@@ -1,0 +1,17 @@
+language: python
+
+python:
+  - 2.7
+  - 3.2
+  - 3.3
+  - pypy
+
+install: python setup.py install
+
+before_script:
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then 2to3 testmachine examples -w; fi
+  - pip install --use-mirrors pytest pytest-timeout pyflakes
+
+script:
+  - pyflakes testmachine examples
+  - py.test -v testmachine
