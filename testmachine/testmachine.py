@@ -9,6 +9,8 @@ from .operations import (
     UnaryOperator,
     Dup,
     Drop,
+    Swap,
+    Rot,
 )
 from collections import namedtuple, Counter
 import operator
@@ -205,19 +207,11 @@ class TestMachine(object):
             PushRandom(produce=produce, target=target, name=name)
         )
 
-    def binary_operation(self, *args, **kwargs):
-        self.add_language(
-            BinaryOperator(*args, **kwargs)
-        )
-
-    def unary_operation(self, operation, varstack, name):
-        self.add_language(
-            UnaryOperator(operation, varstack, name)
-        )
-
     def basic_operations(self, varstack):
         self.add_language(Dup(varstack))
         self.add_language(Drop(varstack))
+        self.add_language(Swap(varstack))
+        self.add_language(Rot(varstack))
 
     def ints(self, target):
         self.basic_operations(target)

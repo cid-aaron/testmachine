@@ -255,3 +255,33 @@ class Drop(SingleStackOperation):
 
     def compile(self, arguments, results):
         return []
+
+
+class Swap(SingleStackOperation):
+    min_height = 2
+
+    def invoke(self, context):
+        vs = context.varstack(self.varstack)
+        x = vs.pop()
+        y = vs.pop()
+        vs.push(x)
+        vs.push(y)
+
+    def compile(self, arguments, results):
+        return []
+
+
+class Rot(SingleStackOperation):
+    min_height = 3
+
+    def invoke(self, context):
+        vs = context.varstack(self.varstack)
+        x = vs.pop()
+        y = vs.pop()
+        z = vs.pop()
+        vs.push(y)
+        vs.push(z)
+        vs.push(x)
+
+    def compile(self, arguments, results):
+        return []
