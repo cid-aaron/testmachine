@@ -1,17 +1,23 @@
 from operator import itemgetter
 from collections import Counter
+import copy
 
 
 class OperationOrLanguage(object):
+    precondition = None
+
     def applicable(self, context):
         for varstack, req in self.requirements.items():
             if not context.varstack(varstack).has(req):
                 return False
-        return True
+        if self.precondition:
+            return self.precondition(*context.read(self.argspec))
+        else:
+            return True
 
 
 class Operation(OperationOrLanguage):
-    def __init__(self, varstacks, name):
+    def __init__(self, varstacks, name=None, pattern=None, precondition=None):
         """
         varstacks :: [(str, int)]
 
@@ -19,16 +25,22 @@ class Operation(OperationOrLanguage):
         have height at least this high.
         """
         self.varstacks = tuple(map(itemgetter(0), varstacks))
-        self.name = name
+        self.name = name or self.__class__.__name__.lower()
         self.requirements = Counter()
         for s, c in varstacks:
             self.requirements[s] += c
+        self.pattern = pattern
+        self.precondition = precondition
 
     def __repr__(self):
         return "Operation(%s)" % self.display()
 
     def compile(self, arguments, results):
-        invocation = "%s(%s)" % (self.name, ', '.join(arguments))
+        if self.pattern is None:
+            invocation = "%s(%s)" % (self.name, ', '.join(arguments))
+        else:
+            invocation = self.pattern % arguments
+
         if results:
             return ["%s = %s" % (', '.join(results), invocation)]
         else:
@@ -47,28 +59,86 @@ class Operation(OperationOrLanguage):
 
 
 class ReadAndWrite(Operation):
-    def __init__(self, function, argorder, target=None, name=None):
+    def __init__(
+        self, function, argspec, target=None, name=None, precondition=None,
+        pattern=None
+    ):
         super(ReadAndWrite, self).__init__(
-            Counter(argorder).items(),
-            name or function.__name__
+            Counter(argspec).items(),
+            name or function.__name__,
+            pattern=pattern,
+            precondition=precondition,
         )
         self.function = function
-        self.argorder = argorder
+        self.argspec = argspec
         self.target = target
 
     def invoke(self, context):
-        args = [context.varstack(n).pop() for n in self.argorder]
+        args = [context.varstack(n).pop() for n in self.argspec]
         result = self.function(*args)
         if self.target is not None:
             context.varstack(self.target).push(result)
 
 
-class Check(Operation):
-    def __init__(self, test, args, name=None):
-        super(Check, self).__init__(
-            Counter(args).items(), name or test.__name__
+class Mutate(Operation):
+    def __init__(
+        self, function, argspec, name=None, precondition=None,
+        pattern=None
+    ):
+        super(ReadAndWrite, self).__init__(
+            Counter(argspec).items(),
+            name or function.__name__,
+            pattern=pattern,
+            precondition=precondition,
         )
-        self.argorder = args
+
+
+class BinaryOperator(ReadAndWrite):
+    def __init__(self, operation, varstack, name, precondition=None):
+        super(BinaryOperator, self).__init__(
+            function=operation,
+            argspec=(varstack, varstack),
+            target=varstack,
+            name=name,
+            precondition=precondition,
+        )
+
+    def compile(self, arguments, results):
+        assert len(arguments) == 2
+        assert len(results) <= 1
+        x, y = arguments
+        invocation = " ".join((x, self.name, y))
+        if results:
+            return ["%s = %s" % (', '.join(results), invocation)]
+        else:
+            return [invocation]
+
+
+class UnaryOperator(ReadAndWrite):
+    def __init__(self, operation, varstack, name):
+        super(UnaryOperator, self).__init__(
+            function=operation,
+            argspec=(varstack,),
+            target=varstack,
+            name=name
+        )
+
+    def compile(self, arguments, results):
+        assert len(arguments) == 1
+        assert len(results) <= 1
+        invocation = "".join((self.name, arguments[0]))
+        if results:
+            return ["%s = %s" % (', '.join(results), invocation)]
+        else:
+            return [invocation]
+
+
+class Check(Operation):
+    def __init__(self, test, argspec, name=None):
+        super(Check, self).__init__(
+            Counter(argspec).items(), name or test.__name__
+        )
+        self.argspec = argspec
         self.test = test
 
     def compile(self, arguments, results):
@@ -76,18 +146,16 @@ class Check(Operation):
         return ["assert %s(%s)" % (self.name, ', '.join(arguments))]
 
     def invoke(self, context):
-        seen = Counter()
-        args = []
-        for a in self.argorder:
-            args.append(context.varstack(a).peek(seen[a]))
-            seen[a] += 1
+        args = context.read(self.argspec)
         assert self.test(*args)
 
 
 class SingleStackOperation(Operation):
-    def __init__(self, varstack, name):
+    min_height = 0
+
+    def __init__(self, varstack, name=None):
         super(SingleStackOperation, self).__init__(
-            varstacks=(varstack,), name=name
+            varstacks=((varstack, self.min_height),), name=name
         )
 
     @property
@@ -97,7 +165,7 @@ class SingleStackOperation(Operation):
 
 class Push(SingleStackOperation):
     def __init__(self, varstack, value):
-        super(Push, self).__init__((varstack, 0), name="push")
+        super(Push, self).__init__(varstack, name="push")
         self.value = value
 
     def compile(self, arguments, results):
@@ -106,7 +174,7 @@ class Push(SingleStackOperation):
         return ["%s = %r" % (results[0], self.value)]
 
     def invoke(self, context):
-        context.varstack(self.varstack).push(self.value)
+        context.varstack(self.varstack).push(copy.deepcopy(self.value))
 
     def args(self):
         return super(Push, self).args() + (self.value,)
@@ -167,3 +235,22 @@ class ChooseFrom(Language):
                 if child.applicable(context):
                     return child
         raise InapplicableLanguage
+
+
+class Dup(SingleStackOperation):
+    min_height = 1
+
+    def invoke(self, context):
+        context.varstack(self.varstack).dup()
+
+    def compile(self, arguments, results):
+        return []
+
+
+class Drop(SingleStackOperation):
+    min_height = 1
+    def invoke(self, context):
+        context.varstack(self.varstack).pop()
+
+    def compile(self, arguments, results):
+        return []

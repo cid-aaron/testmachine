@@ -4,9 +4,16 @@ from .operations import (
     ChooseFrom,
     ReadAndWrite,
     Check,
-    PushRandom
+    PushRandom,
+    BinaryOperator,
+    UnaryOperator,
+    Dup,
+    Drop,
 )
-from collections import namedtuple
+from collections import namedtuple, Counter
+import operator
+import traceback
+import math
 
 
 ProgramStep = namedtuple(
@@ -15,9 +22,17 @@ ProgramStep = namedtuple(
 )
 
 
-class FrozenVarStack(Exception):
+class TestMachineError(Exception):
+    pass
+
+
+class FrozenVarStack(TestMachineError):
     def __init__(self):
         super(FrozenVarStack, self).__init__("Cannot modify frozen varstack")
+
+
+class NoFailingProgram(TestMachineError):
+    pass
 
 
 class VarStack(object):
@@ -39,28 +54,35 @@ class VarStack(object):
         finally:
             self.frozen = False
 
-    def pop(self):
+    def modification(self):
         if self.frozen:
             raise FrozenVarStack()
 
+    def pop(self):
+        self.modification()
         self._integrity_check()
         result = self.data.pop()
-        self.context.read(self.names.pop())
+        self.context.on_read(self.names.pop())
         return result
 
     def push(self, head):
-        if self.frozen:
-            raise FrozenVarStack()
+        self.modification()
         self._integrity_check()
         self.data.append(head)
         v = self.context.newvar()
         self.names.append(v)
-        self.context.write(v)
+        self.context.on_write(v)
+
+    def dup(self):
+        self.modification()
+        self._integrity_check()
+        self.names.append(self.names[-1])
+        self.data.append(self.data[-1])
 
     def peek(self, index=0):
         self._integrity_check()
         i = -1 - index
-        self.context.read(self.names[i])
+        self.context.on_read(self.names[i])
         return self.data[i]
 
     def has(self, count):
@@ -76,8 +98,8 @@ class RunContext(object):
         self.reset_tracking()
 
     def reset_tracking(self):
-        self.reads = []
-        self.writes = []
+        self.values_read = []
+        self.values_written = []
 
     def __repr__(self):
         return "RunContext(%s)" % (
@@ -91,11 +113,11 @@ class RunContext(object):
         self.var_index += 1
         return "t%d" % (self.var_index,)
 
-    def read(self, var):
-        self.reads.append(var)
+    def on_read(self, var):
+        self.values_read.append(var)
 
-    def write(self, var):
-        self.writes.append(var)
+    def on_write(self, var):
+        self.values_written.append(var)
 
     def varstack(self, name):
         try:
@@ -105,12 +127,28 @@ class RunContext(object):
             self.varstacks[name] = varstack
             return varstack
 
+    def read(self, argspec):
+        result = []
+        seen = Counter()
+        for a in argspec:
+            result.append(self.varstack(a).peek(seen[a]))
+            seen[a] += 1
+        return tuple(result)
+
 
 class TestMachine(object):
-    def __init__(self):
+    def __init__(
+        self,
+        n_iters=500,
+        prog_length=200,
+        good_enough=10
+    ):
         self.languages = []
+        self.n_iters = n_iters
+        self.prog_length = prog_length
+        self.good_enough = good_enough
 
-    def operation(self, function, args, target=None, name=None):
+    def operation(self, *args, **kwargs):
         """
         Add an operation which pops arguments from each of the varstacks named
         in args, passes the result in that order to function and pushes the
@@ -118,16 +156,16 @@ class TestMachine(object):
         ignored.
         """
         self.add_language(ReadAndWrite(
-            function=function, argorder=args, target=target, name=name
+            *args, **kwargs
         ))
 
-    def check(self, test, args, name=None):
+    def check(self, *args, **kwargs):
         """
         Add an operation which reads from the varstacks in args in order,
         without popping their result and passes them in order to test. If test
         returns something truthy this operation passes, else it will fail.
         """
-        self.add_language(Check(test=test, args=args, name=name))
+        self.add_language(Check(*args, **kwargs))
 
     def generate(self, produce, target, name=None):
         """
@@ -136,6 +174,59 @@ class TestMachine(object):
         """
         self.add_language(
             PushRandom(produce=produce, target=target, name=name)
+        )
+
+    def binary_operation(self, *args, **kwargs):
+        self.add_language(
+            BinaryOperator(*args, **kwargs)
+        )
+
+    def unary_operation(self, operation, varstack, name):
+        self.add_language(
+            UnaryOperator(operation, varstack, name)
+        )
+
+    def basic_operations(self, varstack):
+        self.add_language(Dup(varstack))
+        self.add_language(Drop(varstack))
+
+    def ints(self, target):
+        self.basic_operations(target)
+        self.arithmetic_operations(target)
+        self.generate(lambda r: r.randint(0, 10 ** 6), target)
+        self.generate(lambda r: r.randint(-10, 10), target)
+
+    def lists(self, source, target):
+        self.basic_operations(target)
+        self.generate(lambda r: [], target)
+        self.operation(
+            function=lambda x, y: x.append(y),
+            argspec=(target, source),
+            target=None,
+            name="append",
+            pattern="%s.append(%s)"
+        )
+        self.operation(
+            function=list,
+            argspec=(target,),
+            target=target
+        )
+        self.binary_operation(operator.add, target, "+")
+
+    def arithmetic_operations(self, varstack):
+        self.binary_operation(operator.add, varstack, "+")
+        self.binary_operation(operator.sub, varstack, "-")
+        self.binary_operation(operator.mul, varstack, "*")
+        self.binary_operation(
+            operator.div, varstack, "/",
+            precondition=lambda x, y: y != 0
+        )
+        self.unary_operation(operator.neg, varstack, "-")
+
+    def power_operation(self, varstack):
+        self.binary_operation(
+            operator.pow, varstack, "**",
+            precondition=lambda x, y: (x > 0) or (math.floor(y) == y)
         )
 
     def add_language(self, language):
@@ -147,18 +238,15 @@ class TestMachine(object):
 
     def find_failing_program(
         self,
-        n_iters=500,
-        prog_length=200,
-        good_enough=10
     ):
         examples_found = 0
         best_example = None
 
-        for _ in xrange(n_iters):
+        for _ in xrange(self.n_iters):
             program = []
             context = RunContext()
             try:
-                for _ in xrange(prog_length):
+                for _ in xrange(self.prog_length):
                     operation = self.language.generate(context)
                     program.append(operation)
                     operation.invoke(context)
@@ -166,9 +254,13 @@ class TestMachine(object):
                 examples_found += 1
                 if best_example is None or len(program) < len(best_example):
                     best_example = program
-                if examples_found >= good_enough:
+                if examples_found >= self.good_enough:
                     return best_example
-        print "Only found %d examples" % examples_found
+        if best_example is None:
+            raise NoFailingProgram(
+                ("Unable to find a failing program of length <= %d"
+                 " after %d iterations") % (self.prog_length, self.n_iters)
+            )
         return best_example
 
     def run_program(self, program):
@@ -195,6 +287,7 @@ class TestMachine(object):
                 operation.invoke(context)
             except:
                 break
+
         return results
 
     def minimize_failing_program(self, program):
@@ -230,8 +323,10 @@ class TestMachine(object):
 
             results.append(ProgramStep(
                 operation=op,
-                definitions=(() if had_error else tuple(context.writes)),
-                arguments=tuple(context.reads)
+                definitions=(
+                    () if had_error else tuple(context.values_written)
+                ),
+                arguments=tuple(context.values_read)
             ))
 
             if had_error:
@@ -239,8 +334,12 @@ class TestMachine(object):
 
         return results
 
-    def run(self, steps=1000):
-        first_try = self.find_failing_program(prog_length=steps)
+    def run(self):
+        try:
+            first_try = self.find_failing_program()
+        except NoFailingProgram as e:
+            print e.message
+            return
         minimal = self.minimize_failing_program(first_try)
         annotated = self.annotate_program(minimal)
         for step in annotated:
@@ -249,3 +348,8 @@ class TestMachine(object):
             )
             for statement in statements:
                 print statement
+        try:
+            self.run_program(minimal)
+            assert False, "This program should be failing but isn't"
+        except:
+            traceback.print_exc()
