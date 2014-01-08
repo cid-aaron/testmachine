@@ -134,16 +134,18 @@ class UnaryOperator(ReadAndWrite):
 
 
 class Check(Operation):
-    def __init__(self, test, argspec, name=None):
+    def __init__(self, test, argspec, name=None, pattern=None):
+        name = name or test.__name__
+        pattern = pattern or ("assert %s(%%s)" % (name,))
         super(Check, self).__init__(
-            Counter(argspec).items(), name or test.__name__
+            Counter(argspec).items(), name=name, pattern=pattern
         )
         self.argspec = argspec
         self.test = test
 
     def compile(self, arguments, results):
         assert not results
-        return ["assert %s(%s)" % (self.name, ', '.join(arguments))]
+        return [self.pattern % arguments]
 
     def invoke(self, context):
         args = context.read(self.argspec)

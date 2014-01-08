@@ -7,15 +7,9 @@ from .operations import (
     PushRandom,
     BinaryOperator,
     UnaryOperator,
-    Dup,
-    Drop,
-    Swap,
-    Rot,
 )
 from collections import namedtuple, Counter
-import operator
 import traceback
-import math
 
 
 ProgramStep = namedtuple(
@@ -164,7 +158,7 @@ class TestMachine(object):
     def __init__(
         self,
         n_iters=500,
-        prog_length=200,
+        prog_length=1000,
         good_enough=10,
         print_output=True,
     ):
@@ -205,65 +199,6 @@ class TestMachine(object):
         """
         self.add_language(
             PushRandom(produce=produce, target=target, name=name)
-        )
-
-    def basic_operations(self, varstack):
-        self.add_language(Dup(varstack))
-        self.add_language(Drop(varstack))
-        self.add_language(Swap(varstack))
-        self.add_language(Rot(varstack))
-
-    def ints(self, target):
-        self.basic_operations(target)
-        self.arithmetic_operations(target)
-        self.generate(lambda r: r.randint(0, 10 ** 6), target)
-        self.generate(lambda r: r.randint(-10, 10), target)
-
-    def lists(self, source, target):
-        self.basic_operations(target)
-        self.generate(lambda r: [], target)
-        self.operation(
-            function=lambda x, y: x.append(y),
-            argspec=(target, source),
-            target=None,
-            name="append",
-            pattern="%s.append(%s)"
-        )
-        self.operation(
-            function=lambda x: [x],
-            argspec=(source,),
-            target=target,
-            name="singleton",
-            pattern="[%s]",
-        )
-        self.operation(
-            function=lambda x, y: [x, y],
-            argspec=(source, source),
-            target=target,
-            name="pair",
-            pattern="[%s, %s]",
-        )
-        self.operation(
-            function=list,
-            argspec=(target,),
-            target=target
-        )
-        self.binary_operation(operator.add, target, "+")
-
-    def arithmetic_operations(self, varstack):
-        self.binary_operation(operator.add, varstack, "+")
-        self.binary_operation(operator.sub, varstack, "-")
-        self.binary_operation(operator.mul, varstack, "*")
-        self.binary_operation(
-            operator.div, varstack, "/",
-            precondition=lambda x, y: bool(y)
-        )
-        self.unary_operation(operator.neg, varstack, "-")
-
-    def power_operation(self, varstack):
-        self.binary_operation(
-            operator.pow, varstack, "**",
-            precondition=lambda x, y: (x > 0) or (math.floor(y) == y)
         )
 
     def run(self):

@@ -12,16 +12,39 @@ Example output:
 from testmachine import TestMachine
 from random import Random
 
+# This is the object that we use to define the kind of test case we want to
+# generate.
 machine = TestMachine()
 
-machine.basic_operations("floats")
-machine.arithmetic_operations("floats")
+# testmachine.common defines a number of standard operations on different types
+# of variables. We're going to use some of those rather than implementing our
+# own.
+from testmachine.common import basic_operations, arithmetic_operations
+
+# We only have one type of variable. We'll call that floats, but this is just
+# an arbitrary name. We could call it steve if we wanted to.
+# We generate our basic floats as random numbers between 0 and 1.
 machine.generate(Random.random, "floats")
 
+# These are basic stack manipulation operations. They aren't very exciting, but
+# they expand the likelihood of producing interesting programs. Most machines
+# will use these.
+basic_operations(machine, "floats")
 
+# floats can be combined with the normal arithmetic operations
+arithmetic_operations(machine, "floats")
+
+
+# We want to demonstrate that floating point addition is not associative. This
+# check will read three variables off our stack of floats and see if adding t
+# them up in different orders produces the same value.
 def associative_add(x, y, z):
     return x + (y + z) == (x + y) + z
 
+# If the function we pass to a check returns a falsy value then the program
+# will fail.
 machine.check(associative_add, ("floats", "floats", "floats"))
 
+# Attempt to find a falsifying example for the problem we've defined and print
+# it to stdout. If this cannot find any examples (it will), say so.
 machine.run()
