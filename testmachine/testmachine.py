@@ -192,7 +192,7 @@ class TestMachine(object):
         """
         self.add_language(Check(*args, **kwargs))
 
-    def generate(self, produce, target, name=None):
+    def generate(self, produce, target, name=None, supports_copy=True):
         """
         Add a generator for operations which produces values by calling
         produce with a Random instance and pushes them onto target.

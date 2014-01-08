@@ -1,6 +1,6 @@
 from operator import itemgetter
 from collections import Counter
-import copy
+from random import Random
 
 
 class OperationOrLanguage(object):
@@ -169,20 +169,20 @@ class SingleStackOperation(Operation):
 
 
 class Push(SingleStackOperation):
-    def __init__(self, varstack, value):
+    def __init__(self, varstack, gen_value):
         super(Push, self).__init__(varstack, name="push")
-        self.value = value
+        self.gen_value = gen_value
 
     def compile(self, arguments, results):
         assert not arguments
         assert len(results) == 1
-        return ["%s = %r" % (results[0], self.value)]
+        return ["%s = %r" % (results[0], self.gen_value())]
 
     def invoke(self, context):
-        context.varstack(self.varstack).push(copy.deepcopy(self.value))
+        context.varstack(self.varstack).push(self.gen_value())
 
     def args(self):
-        return super(Push, self).args() + (self.value,)
+        return super(Push, self).args() + (self.gen_value(),)
 
 
 class InapplicableLanguage(Exception):
@@ -212,9 +212,15 @@ class PushRandom(Language):
         self.target = target
 
     def generate(self, context):
+        state = context.random.getstate()
+
+        def gen_result():
+            r = Random(0)
+            r.setstate(state)
+            return self.produce(r)
         return Push(
             self.target,
-            self.produce(context.random)
+            gen_result,
         )
 
 
