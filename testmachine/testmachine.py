@@ -259,17 +259,22 @@ class TestMachine(object):
         for _ in xrange(self.n_iters):
             program = []
             context = RunContext()
-            try:
-                for _ in xrange(self.prog_length):
-                    operation = self.language.generate(context)
-                    program.append(operation)
+            for _ in xrange(self.prog_length):
+                operation = self.language.generate(context)
+                program.append(operation)
+                try:
                     operation.invoke(context)
-            except:
-                examples_found += 1
-                if best_example is None or len(program) < len(best_example):
-                    best_example = program
-                if examples_found >= self.good_enough:
-                    return best_example
+                except Exception:
+                    examples_found += 1
+                    if (
+                        (best_example is None) or
+                        (len(program) < len(best_example))
+                    ):
+                        best_example = program
+                    if examples_found >= self.good_enough:
+                        return best_example
+                    else:
+                        break
         if best_example is None:
             raise NoFailingProgram(
                 ("Unable to find a failing program of length <= %d"
@@ -287,7 +292,7 @@ class TestMachine(object):
         try:
             self.run_program(program)
             return False
-        except:
+        except Exception:
             return True
 
     def prune_program(self, program):
@@ -299,7 +304,7 @@ class TestMachine(object):
             results.append(operation)
             try:
                 operation.invoke(context)
-            except:
+            except Exception:
                 break
 
         return results
@@ -332,7 +337,7 @@ class TestMachine(object):
             context.reset_tracking()
             try:
                 op.invoke(context)
-            except:
+            except Exception:
                 had_error = True
 
             results.append(ProgramStep(
@@ -365,5 +370,5 @@ class TestMachine(object):
         try:
             self.run_program(minimal)
             assert False, "This program should be failing but isn't"
-        except:
+        except Exception:
             traceback.print_exc()
