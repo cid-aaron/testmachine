@@ -249,6 +249,7 @@ class Dup(SingleStackOperation):
 
 class Drop(SingleStackOperation):
     min_height = 1
+
     def invoke(self, context):
         context.varstack(self.varstack).pop()
 

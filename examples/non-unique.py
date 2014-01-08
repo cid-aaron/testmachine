@@ -3,11 +3,9 @@ Find an example demonstrating that lists can contain the same element multiple
 times.
 
 Example output:
-    t1 = 354449
-    t2 = []
-    t2.append(t1)
-    t3 = t2 + t2
-    assert unique(t3)
+    t1 = 1
+    t2 = [t1, t1]
+    assert unique(t2)
 """
 
 from testmachine import TestMachine

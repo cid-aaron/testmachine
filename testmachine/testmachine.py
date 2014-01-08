@@ -207,6 +207,20 @@ class TestMachine(object):
             pattern="%s.append(%s)"
         )
         self.operation(
+            function=lambda x: [x],
+            argspec=(source,),
+            target=target,
+            name="singleton",
+            pattern="[%s]",
+        )
+        self.operation(
+            function=lambda x, y: [x, y],
+            argspec=(source, source),
+            target=target,
+            name="pair",
+            pattern="[%s, %s]",
+        )
+        self.operation(
             function=list,
             argspec=(target,),
             target=target
