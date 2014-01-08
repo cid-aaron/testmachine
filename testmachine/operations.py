@@ -37,9 +37,9 @@ class Operation(OperationOrLanguage):
     def args(self):
         return self.varstacks
 
-    def display(self, varnames=None):
+    def display(self):
         return "%s(%s)" % (
-            self.name, ', '.join(map(repr, self.args(varnames)))
+            self.name, ', '.join(map(repr, self.args()))
         )
 
     def invoke(self, context):
