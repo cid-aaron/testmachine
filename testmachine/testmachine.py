@@ -6,6 +6,13 @@ from .operations import (
     Check,
     PushRandom
 )
+from collections import namedtuple
+
+
+ProgramStep = namedtuple(
+    "ProgramStep",
+    ("definitions", "arguments", "operation")
+)
 
 
 class FrozenVarStack(Exception):
@@ -46,7 +53,9 @@ class VarStack(object):
             raise FrozenVarStack()
         self._integrity_check()
         self.data.append(head)
-        self.names.append(self.context.newvar())
+        v = self.context.newvar()
+        self.names.append(v)
+        self.context.write(v)
 
     def peek(self, index=0):
         self._integrity_check()
@@ -64,6 +73,11 @@ class RunContext(object):
         self.random = random or Random()
         self.varstacks = {}
         self.var_index = 0
+        self.reset_tracking()
+
+    def reset_tracking(self):
+        self.reads = []
+        self.writes = []
 
     def __repr__(self):
         return "RunContext(%s)" % (
@@ -75,13 +89,13 @@ class RunContext(object):
 
     def newvar(self):
         self.var_index += 1
-        return self.var_index
+        return "t%d" % (self.var_index,)
 
     def read(self, var):
-        pass
+        self.reads.append(var)
 
     def write(self, var):
-        pass
+        self.writes.append(var)
 
     def varstack(self, name):
         try:
@@ -131,7 +145,15 @@ class TestMachine(object):
     def language(self):
         return ChooseFrom(self.languages)
 
-    def find_failing_program(self, n_iters=500, prog_length=200):
+    def find_failing_program(
+        self,
+        n_iters=500,
+        prog_length=200,
+        good_enough=10
+    ):
+        examples_found = 0
+        best_example = None
+
         for _ in xrange(n_iters):
             program = []
             context = RunContext()
@@ -141,7 +163,13 @@ class TestMachine(object):
                     program.append(operation)
                     operation.invoke(context)
             except:
-                return program
+                examples_found += 1
+                if best_example is None or len(program) < len(best_example):
+                    best_example = program
+                if examples_found >= good_enough:
+                    return best_example
+        print "Only found %d examples" % examples_found
+        return best_example
 
     def run_program(self, program):
         context = RunContext()
@@ -189,6 +217,35 @@ class TestMachine(object):
             else:
                 return current_best
 
+    def annotate_program(self, program):
+        context = RunContext()
+        results = []
+        for op in program:
+            had_error = False
+            context.reset_tracking()
+            try:
+                op.invoke(context)
+            except:
+                had_error = True
+
+            results.append(ProgramStep(
+                operation=op,
+                definitions=(() if had_error else tuple(context.writes)),
+                arguments=tuple(context.reads)
+            ))
+
+            if had_error:
+                break
+
+        return results
+
     def run(self, steps=1000):
         first_try = self.find_failing_program(prog_length=steps)
-        return self.minimize_failing_program(first_try)
+        minimal = self.minimize_failing_program(first_try)
+        annotated = self.annotate_program(minimal)
+        for step in annotated:
+            statements = step.operation.compile(
+                arguments=step.arguments, results=step.definitions
+            )
+            for statement in statements:
+                print statement

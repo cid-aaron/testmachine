@@ -24,11 +24,23 @@ class Operation(OperationOrLanguage):
         for s, c in varstacks:
             self.requirements[s] += c
 
+    def __repr__(self):
+        return "Operation(%s)" % self.display()
+
+    def compile(self, arguments, results):
+        invocation = "%s(%s)" % (self.name, ', '.join(arguments))
+        if results:
+            return ["%s = %s" % (', '.join(results), invocation)]
+        else:
+            return [invocation]
+
     def args(self):
         return self.varstacks
 
-    def display(self):
-        return "%s(%s)" % (self.name, ', '.join(map(repr, self.args())))
+    def display(self, varnames=None):
+        return "%s(%s)" % (
+            self.name, ', '.join(map(repr, self.args(varnames)))
+        )
 
     def invoke(self, context):
         raise NotImplementedError()
@@ -59,6 +71,10 @@ class Check(Operation):
         self.argorder = args
         self.test = test
 
+    def compile(self, arguments, results):
+        assert not results
+        return ["assert %s(%s)" % (self.name, ', '.join(arguments))]
+
     def invoke(self, context):
         seen = Counter()
         args = []
@@ -83,6 +99,11 @@ class Push(SingleStackOperation):
     def __init__(self, varstack, value):
         super(Push, self).__init__((varstack, 0), name="push")
         self.value = value
+
+    def compile(self, arguments, results):
+        assert not arguments
+        assert len(results) == 1
+        return ["%s = %r" % (results[0], self.value)]
 
     def invoke(self, context):
         context.varstack(self.varstack).push(self.value)
