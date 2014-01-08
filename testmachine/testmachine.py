@@ -256,7 +256,7 @@ class TestMachine(object):
         self.binary_operation(operator.mul, varstack, "*")
         self.binary_operation(
             operator.div, varstack, "/",
-            precondition=lambda x, y: y != 0
+            precondition=lambda x, y: bool(y)
         )
         self.unary_operation(operator.neg, varstack, "-")
 
