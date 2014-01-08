@@ -13,5 +13,5 @@ before_script:
   - pip install --use-mirrors pytest pytest-timeout pyflakes
 
 script:
-  - pyflakes testmachine examples
+  - pyflakes testmachine
   - py.test -v testmachine
