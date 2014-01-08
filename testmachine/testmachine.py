@@ -163,12 +163,19 @@ class TestMachine(object):
         self,
         n_iters=500,
         prog_length=200,
-        good_enough=10
+        good_enough=10,
+        print_output=True,
     ):
         self.languages = []
         self.n_iters = n_iters
         self.prog_length = prog_length
         self.good_enough = good_enough
+        self.print_output = print_output
+
+    def inform(self, message, *args, **kwargs):
+        assert not (args and kwargs)
+        if self.print_output:
+            print (message % (args or kwargs))
 
     def operation(self, *args, **kwargs):
         """
@@ -363,18 +370,27 @@ class TestMachine(object):
         try:
             first_try = self.find_failing_program()
         except NoFailingProgram as e:
-            print e.message
+            self.inform(e.message)
             return
         minimal = self.minimize_failing_program(first_try)
-        annotated = self.annotate_program(minimal)
-        for step in annotated:
+        context = RunContext()
+        try:
+            context.run_program(minimal)
+        except Exception:
+            pass
+
+        for step in context.log:
             statements = step.operation.compile(
                 arguments=step.arguments, results=step.definitions
             )
             for statement in statements:
-                print statement
-        try:
-            self.run_program(minimal)
-            assert False, "This program should be failing but isn't"
-        except Exception:
-            traceback.print_exc()
+                self.inform(statement)
+
+        if self.print_output:
+            try:
+                self.run_program(minimal)
+                assert False, "This program should be failing but isn't"
+            except Exception:
+                traceback.print_exc()
+
+        return context
