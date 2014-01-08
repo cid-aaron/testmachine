@@ -9,7 +9,7 @@ from .operations import (
     BinaryOperator,
     UnaryOperator,
 )
-from collections import namedtuple, Counter
+from collections import namedtuple, defaultdict
 import traceback
 
 
@@ -148,7 +148,7 @@ class RunContext(object):
 
     def read(self, argspec):
         result = []
-        seen = Counter()
+        seen = defaultdict(lambda: 0)
         for a in argspec:
             result.append(self.varstack(a).peek(seen[a]))
             seen[a] += 1

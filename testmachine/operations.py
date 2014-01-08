@@ -1,5 +1,5 @@
 from operator import itemgetter
-from collections import Counter
+from collections import defaultdict
 from random import Random
 
 
@@ -26,7 +26,7 @@ class Operation(OperationOrLanguage):
         """
         self.varstacks = tuple(map(itemgetter(0), varstacks))
         self.name = name or self.__class__.__name__.lower()
-        self.requirements = Counter()
+        self.requirements = defaultdict(lambda: 0)
         for s, c in varstacks:
             self.requirements[s] += c
         self.pattern = pattern
@@ -64,7 +64,7 @@ class ReadAndWrite(Operation):
         pattern=None
     ):
         super(ReadAndWrite, self).__init__(
-            Counter(argspec).items(),
+            _counts(argspec),
             name or function.__name__,
             pattern=pattern,
             precondition=precondition,
@@ -86,7 +86,7 @@ class Mutate(Operation):
         pattern=None
     ):
         super(ReadAndWrite, self).__init__(
-            Counter(argspec).items(),
+            _counts(argspec),
             name or function.__name__,
             pattern=pattern,
             precondition=precondition,
@@ -141,7 +141,7 @@ class Check(Operation):
             pattern = "assert %s(%s)" % (name, arg_string)
 
         super(Check, self).__init__(
-            Counter(argspec).items(), name=name, pattern=pattern
+            _counts(argspec), name=name, pattern=pattern
         )
         self.argspec = argspec
         self.test = test
@@ -228,7 +228,7 @@ class ChooseFrom(Language):
     def __init__(self, children):
         super(ChooseFrom, self).__init__()
         self.children = tuple(children)
-        self.requirements = Counter()
+        self.requirements = defaultdict(lambda: 0)
         for c in children:
             for k, v in c.requirements.items():
                 self.requirements[k] = min(v, self.requirements[k])
@@ -296,3 +296,10 @@ class Rot(SingleStackOperation):
 
     def compile(self, arguments, results):
         return []
+
+
+def _counts(values):
+    c = defaultdict(lambda: 0)
+    for v in values:
+        c[v] += 1
+    return c.items()
