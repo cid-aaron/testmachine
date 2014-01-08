@@ -96,10 +96,32 @@ class RunContext(object):
         self.varstacks = {}
         self.var_index = 0
         self.reset_tracking()
+        self.log = []
 
     def reset_tracking(self):
         self.values_read = []
         self.values_written = []
+
+    def run_program(self, program):
+        for operation in program:
+            self.execute(operation)
+
+    def execute(self, operation):
+        self.reset_tracking()
+        try:
+            operation.invoke(self)
+            self.log.append(ProgramStep(
+                operation=operation,
+                definitions=tuple(self.values_written),
+                arguments=tuple(self.values_read)
+            ))
+        except Exception:
+            self.log.append(ProgramStep(
+                operation=operation,
+                definitions=(),
+                arguments=tuple(self.values_read)
+            ))
+            raise
 
     def __repr__(self):
         return "RunContext(%s)" % (
@@ -284,8 +306,7 @@ class TestMachine(object):
 
     def run_program(self, program):
         context = RunContext()
-        for operation in program:
-            operation.invoke(context)
+        context.run_program(program)
         return context
 
     def program_fails(self, program):
@@ -331,27 +352,12 @@ class TestMachine(object):
 
     def annotate_program(self, program):
         context = RunContext()
-        results = []
-        for op in program:
-            had_error = False
-            context.reset_tracking()
-            try:
-                op.invoke(context)
-            except Exception:
-                had_error = True
+        try:
+            context.run_program(program)
+        except Exception:
+            pass
 
-            results.append(ProgramStep(
-                operation=op,
-                definitions=(
-                    () if had_error else tuple(context.values_written)
-                ),
-                arguments=tuple(context.values_read)
-            ))
-
-            if had_error:
-                break
-
-        return results
+        return list(context.log)
 
     def run(self):
         try:
