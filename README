@@ -26,6 +26,14 @@ take some editing but should be readable on its own).
 
 There are some examples how to use it in the examples directory. 
 
+======
+Status
+======
+
+This code should be considered pretty experimental right now. You *can* use it
+and it will *probably* work, but I make no promises about the API being stable.
+It's very much still a work in progress as I explore a new idea.
+
 =========
 Internals
 =========
