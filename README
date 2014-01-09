@@ -102,3 +102,7 @@ This version of testmachine has been tested using Python series 2.6, 2.7,
 .. image:: https://travis-ci.org/DRMacIver/testmachine.png?branch=master
    :target: https://travis-ci.org/DRMacIver/testmachine
 
+.. image:: https://coveralls.io/repos/DRMacIver/testmachine/badge.png?branch=master
+  :target: https://coveralls.io/r/DRMacIver/testmachine?branch=master
+
+
