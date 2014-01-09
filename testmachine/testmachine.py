@@ -193,7 +193,7 @@ class TestMachine(object):
         try:
             first_try = self.find_failing_program()
         except NoFailingProgram as e:
-            self.inform(e.message)
+            self.inform(str(e))
             return
         minimal = self.minimize_failing_program(first_try)
         context = RunContext()
