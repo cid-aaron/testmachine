@@ -11,8 +11,11 @@ install: python setup.py install
 
 before_script:
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then 2to3 testmachine -w; fi
-  - pip install --use-mirrors pytest pyflakes
+  - pip install pytest pytest-cov coveralls pyflakes
 
 script:
   - pyflakes testmachine
-  - py.test -v testmachine
+  - py.test -v testmachine --cov=testmachine
+
+after_success:
+  - coveralls
