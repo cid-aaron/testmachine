@@ -22,11 +22,6 @@ class TestMachineError(Exception):
     pass
 
 
-class FrozenVarStack(TestMachineError):
-    def __init__(self):
-        super(FrozenVarStack, self).__init__("Cannot modify frozen varstack")
-
-
 class NoFailingProgram(TestMachineError):
     pass
 
@@ -143,7 +138,7 @@ class TestMachine(object):
     def __init__(
         self,
         n_iters=500,
-        prog_length=1000,
+        prog_length=200,
         good_enough=10,
         print_output=True,
     ):

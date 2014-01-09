@@ -43,8 +43,9 @@ Usage examples
 --------------
 
 1. `Demonstrating that floating point addition is non-associative <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/floats.py>`_
-2. `Finding lists with duplicate elements <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/nonuniquelists.py>`_
-3. `Constructing unbalanced trees <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/unbalancedtrees.py>`_
+2. `Trying (and failing) to show that integer addition is not commutative  <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/commutativeints.py>`_
+3. `Finding lists with duplicate elements <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/nonuniquelists.py>`_
+4. `Constructing unbalanced trees <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/unbalancedtrees.py>`_
 
 ------
 Status

@@ -1,6 +1,6 @@
 import pytest
 from .examples import (
-    floats, nonuniquelists, unbalancedtrees
+    commutativeints, floats, nonuniquelists, unbalancedtrees
 )
 
 
@@ -11,6 +11,9 @@ from .examples import (
 ])
 def test_all_examples(example):
     machine = example.machine
-    machine.print_output = False
     results = machine.run()
     assert len(results.log) > 0
+
+
+def test_ints_are_commutative():
+    assert commutativeints.machine.run() is None
