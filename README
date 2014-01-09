@@ -38,25 +38,25 @@ which are valid python and you don't do anything too unusual then the output
 will be valid python. Otherwise it may take some editing but should be readable
 on its own).
 
-==============
+--------------
 Usage examples
-==============
+--------------
 
 1. `Demonstrating that floating point addition is non-associative <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/floats.py>`_
 2. `Finding lists with duplicate elements <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/nonuniquelists.py>`_
 3. `Constructing unbalanced trees <https://github.com/DRMacIver/testmachine/blob/master/testmachine/examples/unbalancedtrees.py>`_
 
-======
+------
 Status
-======
+------
 
 This code should be considered pretty experimental right now. You *can* use it
 and it will *probably* work, but I make no promises about the API being stable.
 It's very much still a work in progress as I explore a new idea.
 
-=========
+---------
 Internals
-=========
+---------
 
 How does it work?
 
@@ -89,3 +89,16 @@ and written in an operation we convert the stack operations into a set of
 variable reads and writes. The result is a sequence of variable reads and assignments
 in SSA form which is equivalent to the stack program. We then do some simple string
 templating which generates output that looks quite like a python program.
+
+---------
+ Testing
+---------
+
+This version of testmachine has been tested using Python series 2.6, 2.7,
+3.2, 3.3 and pypy.  Builds are checked with `travis`_:
+
+.. _travis: https://travis-ci.org/DRMacIver/testmachine
+
+.. image:: https://travis-ci.org/DRMacIver/testmachine.png?branch=master
+   :target: https://travis-ci.org/DRMacIver/testmachine
+
