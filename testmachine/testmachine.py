@@ -1,6 +1,5 @@
 from __future__ import print_function
 from random import Random
-from contextlib import contextmanager
 from .operations import (
     ChooseFrom,
     ReadAndWrite,
@@ -43,27 +42,13 @@ class VarStack(object):
     def _integrity_check(self):
         assert len(self.data) == len(self.names)
 
-    @contextmanager
-    def freeze(self):
-        self.frozen = True
-        try:
-            yield
-        finally:
-            self.frozen = False
-
-    def modification(self):
-        if self.frozen:
-            raise FrozenVarStack()
-
     def pop(self):
-        self.modification()
         self._integrity_check()
         result = self.data.pop()
         self.context.on_read(self.names.pop())
         return result
 
     def push(self, head):
-        self.modification()
         self._integrity_check()
         self.data.append(head)
         v = self.context.newvar()
@@ -71,7 +56,6 @@ class VarStack(object):
         self.context.on_write(v)
 
     def dup(self):
-        self.modification()
         self._integrity_check()
         self.names.append(self.names[-1])
         self.data.append(self.data[-1])
