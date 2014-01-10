@@ -242,6 +242,14 @@ class PushRandom(Language):
             r = Random(0)
             r.setstate(state)
             return self.produce(r)
+
+        # We run this so that any errors bubble up rather than being treated
+        # as a breaking program.
+        v = gen_result()
+
+        # Internal check. It's important there's no extra source of randomness
+        # here
+        assert gen_result() == v
         return Push(
             self.target,
             gen_result,
