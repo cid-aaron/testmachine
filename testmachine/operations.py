@@ -37,9 +37,9 @@ class Operation(OperationOrLanguage):
 
     def compile(self, arguments, results):
         if self.pattern is None:
-            invocation = "%s(%s)" % (self.name, ', '.join(arguments))
+            invocation = "{0}({1})".format(self.name, ', '.join(arguments))
         else:
-            invocation = self.pattern % arguments
+            invocation = self.pattern.format(*arguments)
 
         if results:
             return ["%s = %s" % (', '.join(results), invocation)]
@@ -128,7 +128,7 @@ class UnaryOperator(ReadAndWrite):
         assert len(results) <= 1
         invocation = "".join((self.name, arguments[0]))
         if results:
-            return ["%s = %s" % (', '.join(results), invocation)]
+            return ["{0} = {1}".format(', '.join(results), invocation)]
         else:
             return [invocation]
 
@@ -137,7 +137,9 @@ class Check(Operation):
     def __init__(self, test, argspec, name=None, pattern=None):
         name = name or test.__name__
         if not pattern:
-            arg_string = ', '.join(["%s"] * len(argspec))
+            arg_string = ', '.join(
+                ["{%d}" % (x,) for x in range(len(argspec))]
+            )
             pattern = "assert %s(%s)" % (name, arg_string)
 
         super(Check, self).__init__(
@@ -148,7 +150,7 @@ class Check(Operation):
 
     def compile(self, arguments, results):
         assert not results
-        return [self.pattern % arguments]
+        return [self.pattern.format(*arguments)]
 
     def invoke(self, context):
         args = context.read(self.argspec)

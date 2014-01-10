@@ -74,7 +74,7 @@ machine.operation(
     argspec=("trees", "trees"),
     target="trees",
     function = lambda x, y: x.join(y),
-    pattern="%s.join(%s)"
+    pattern="{0}.join({1})"
 )
 
 # Assert that our trees are balanced.
@@ -84,7 +84,7 @@ machine.check(
     # The pattern argument controls the output formatting when emitting an
     # example. It will be formatted with the name of the variable we are
     # checking.
-    pattern="assert %s.balanced()"
+    pattern="assert {0}.balanced()"
 )
 
 if __name__ == '__main__':

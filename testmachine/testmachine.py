@@ -1,4 +1,3 @@
-from __future__ import print_function
 from random import Random
 from .operations import (
     ChooseFrom,
@@ -149,9 +148,8 @@ class TestMachine(object):
         self.print_output = print_output
 
     def inform(self, message, *args, **kwargs):
-        assert not (args and kwargs)
         if self.print_output:
-            print(message % (args or kwargs))
+            print(message.format(*args, **kwargs))
 
     def operation(self, *args, **kwargs):
         """

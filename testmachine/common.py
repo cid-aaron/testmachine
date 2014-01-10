@@ -53,21 +53,21 @@ def lists(machine, source, target):
         argspec=(target, source),
         target=None,
         name="append",
-        pattern="%s.append(%s)"
+        pattern="{0}.append({1})"
     )
     machine.operation(
         function=lambda x: [x],
         argspec=(source,),
         target=target,
         name="singleton",
-        pattern="[%s]",
+        pattern="[{0}]",
     )
     machine.operation(
         function=lambda x, y: [x, y],
         argspec=(source, source),
         target=target,
         name="pair",
-        pattern="[%s, %s]",
+        pattern="[{0}, {1}]",
     )
     machine.operation(
         function=list,
