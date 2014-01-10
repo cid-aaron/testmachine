@@ -17,7 +17,7 @@ Example output:
 """
 
 from testmachine import TestMachine
-from testmachine.common import basic_operations
+from testmachine.common import basic_operations, check, generate, operation
 
 
 # Our tree type is a classic binary tree
@@ -62,30 +62,30 @@ class Join(Tree):
 machine = TestMachine()
 
 # Because we might as well
-basic_operations(machine, "trees")
+machine.add(basic_operations("trees"))
 
 # We can always generate leaf nodes. We ignore the Random argument we're given
 # because all Leaves are created equal.
-machine.generate(lambda _: Leaf(), "trees")
+machine.add(generate(lambda _: Leaf(), "trees"))
 
 
 # Given two trees, we can join them together into a new tree
-machine.operation(
+machine.add(operation(
     argspec=("trees", "trees"),
     target="trees",
-    function = lambda x, y: x.join(y),
+    function=lambda x, y: x.join(y),
     pattern="{0}.join({1})"
-)
+))
 
 # Assert that our trees are balanced.
-machine.check(
+machine.add(check(
     test=lambda x: x.balanced(),
     argspec=("trees",),
     # The pattern argument controls the output formatting when emitting an
     # example. It will be formatted with the name of the variable we are
     # checking.
     pattern="assert {0}.balanced()"
-)
+))
 
 if __name__ == '__main__':
     machine.run()

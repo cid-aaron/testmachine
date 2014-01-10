@@ -19,20 +19,22 @@ machine = TestMachine()
 # testmachine.common defines a number of standard operations on different types
 # of variables. We're going to use some of those rather than implementing our
 # own.
-from testmachine.common import basic_operations, arithmetic_operations
+from testmachine.common import (
+    basic_operations, arithmetic_operations, generate, check
+)
 
 # We only have one type of variable. We'll call that floats, but this is just
 # an arbitrary name. We could call it steve if we wanted to.
 # We generate our basic floats as random numbers between 0 and 1.
-machine.generate(Random.random, "floats")
+machine.add(generate(Random.random, "floats"))
 
 # These are basic stack manipulation operations. They aren't very exciting, but
 # they expand the likelihood of producing interesting programs. Most machines
 # will use these.
-basic_operations(machine, "floats")
+machine.add(basic_operations("floats"))
 
 # floats can be combined with the normal arithmetic operations
-arithmetic_operations(machine, "floats")
+machine.add(arithmetic_operations("floats"))
 
 
 # We want to demonstrate that floating point addition is not associative. This
@@ -43,7 +45,7 @@ def associative_add(x, y, z):
 
 # If the function we pass to a check returns a falsy value then the program
 # will fail.
-machine.check(associative_add, ("floats", "floats", "floats"))
+machine.add(check(associative_add, ("floats", "floats", "floats")))
 
 if __name__ == '__main__':
     # Attempt to find a falsifying example for the problem we've defined and

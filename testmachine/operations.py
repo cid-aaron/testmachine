@@ -245,11 +245,8 @@ class PushRandom(Language):
 
         # We run this so that any errors bubble up rather than being treated
         # as a breaking program.
-        v = gen_result()
+        gen_result()
 
-        # Internal check. It's important there's no extra source of randomness
-        # here
-        assert gen_result() == v
         return Push(
             self.target,
             gen_result,
@@ -260,7 +257,13 @@ class PushRandom(Language):
 class ChooseFrom(Language):
     def __init__(self, children):
         super(ChooseFrom, self).__init__()
-        self.children = tuple(children)
+        adjusted = []
+        for c in children:
+            if isinstance(c, (tuple, list)):
+                c = ChooseFrom(c)
+            adjusted.append(c)
+        children = tuple(adjusted)
+        self.children = children
         self.requirements = defaultdict(lambda: 0)
         for c in children:
             for k, v in c.requirements.items():

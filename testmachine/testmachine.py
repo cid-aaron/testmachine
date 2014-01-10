@@ -167,34 +167,6 @@ class TestMachine(object):
         if self.print_output:
             print(message)
 
-    def operation(self, *args, **kwargs):
-        """
-        Add an operation which pops arguments from each of the varstacks named
-        in args, passes the result in that order to function and pushes the
-        result of the invocation onto target. If target is None the result is
-        ignored.
-        """
-        self.add_language(ReadAndWrite(
-            *args, **kwargs
-        ))
-
-    def check(self, *args, **kwargs):
-        """
-        Add an operation which reads from the varstacks in args in order,
-        without popping their result and passes them in order to test. If test
-        returns something truthy this operation passes, else it will fail.
-        """
-        self.add_language(Check(*args, **kwargs))
-
-    def generate(self, *args, **kwargs):
-        """
-        Add a generator for operations which produces values by calling
-        produce with a Random instance and pushes them onto target.
-        """
-        self.add_language(
-            PushRandom(*args, **kwargs)
-        )
-
     def run(self):
         """
         run this testmachine and attempt to produce a failing program. Returns
@@ -232,8 +204,8 @@ class TestMachine(object):
 
         return context
 
-    def add_language(self, language):
-        self.languages.append(language)
+    def add(self, *languages):
+        self.languages.extend(languages)
 
     @property
     def language(self):
@@ -316,13 +288,3 @@ class TestMachine(object):
                         break
             else:
                 return current_best
-
-    def binary_operation(self, *args, **kwargs):
-        self.add_language(
-            BinaryOperator(*args, **kwargs)
-        )
-
-    def unary_operation(self, operation, varstack, name):
-        self.add_language(
-            UnaryOperator(operation, varstack, name)
-        )
