@@ -16,6 +16,12 @@ ProgramStep = namedtuple(
     ("definitions", "arguments", "operation")
 )
 
+Consume = namedtuple("Consume", ("varstack",))
+
+
+def consume(varstack):
+    return Consume(varstack)
+
 
 class TestMachineError(Exception):
     pass
@@ -36,10 +42,13 @@ class VarStack(object):
     def _integrity_check(self):
         assert len(self.data) == len(self.names)
 
-    def pop(self):
+    def pop(self, i=0):
+        i = -1 - i
         self._integrity_check()
-        result = self.data.pop()
-        self.context.on_read(self.names.pop())
+        result = self.data[i]
+        self.context.on_read(self.names[i])
+        del self.data[i]
+        del self.names[i]
         return result
 
     def push(self, head):
@@ -117,6 +126,8 @@ class RunContext(object):
         self.values_written.append(var)
 
     def varstack(self, name):
+        if isinstance(name, Consume):
+            name = name.varstack
         try:
             return self.varstacks[name]
         except KeyError:
@@ -128,8 +139,13 @@ class RunContext(object):
         result = []
         seen = defaultdict(lambda: 0)
         for a in argspec:
-            result.append(self.varstack(a).peek(seen[a]))
-            seen[a] += 1
+            varstack = self.varstack(a)
+            if isinstance(a, Consume):
+                v = varstack.pop(seen[a.varstack])
+            else:
+                v = varstack.peek(seen[a])
+                seen[a] += 1
+            result.append(v)
         return tuple(result)
 
 
@@ -147,9 +163,9 @@ class TestMachine(object):
         self.good_enough = good_enough
         self.print_output = print_output
 
-    def inform(self, message, *args, **kwargs):
+    def inform(self, message):
         if self.print_output:
-            print(message.format(*args, **kwargs))
+            print(message)
 
     def operation(self, *args, **kwargs):
         """
@@ -170,13 +186,13 @@ class TestMachine(object):
         """
         self.add_language(Check(*args, **kwargs))
 
-    def generate(self, produce, target, name=None, supports_copy=True):
+    def generate(self, *args, **kwargs):
         """
         Add a generator for operations which produces values by calling
         produce with a Random instance and pushes them onto target.
         """
         self.add_language(
-            PushRandom(produce=produce, target=target, name=name)
+            PushRandom(*args, **kwargs)
         )
 
     def run(self):

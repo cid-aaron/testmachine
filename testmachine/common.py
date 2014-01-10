@@ -1,6 +1,5 @@
 import operator
 from .operations import (
-    Dup,
     Drop,
     Swap,
     Rot,
@@ -14,7 +13,6 @@ def basic_operations(machine, varstack):
     anything very interesting, but by moving data around they expand the
     range of programs that can be generated.
     """
-    machine.add_language(Dup(varstack))
     machine.add_language(Drop(varstack))
     machine.add_language(Swap(varstack))
     machine.add_language(Rot(varstack))

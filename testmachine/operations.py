@@ -17,34 +17,39 @@ class OperationOrLanguage(object):
 
 
 class Operation(OperationOrLanguage):
-    def __init__(self, varstacks, name=None, pattern=None, precondition=None):
-        """
-        varstacks :: [(str, int)]
-
-        Create an operation which works on these varstacks requiring them to
-        have height at least this high.
-        """
+    def __init__(
+            self, varstacks, name=None, pattern=None, patterns=None,
+            precondition=None):
+        if pattern and patterns:
+            raise ValueError(
+                "Cannot specify both a single and multiple patterns"
+            )
+        if pattern:
+            patterns = (pattern,)
         self.varstacks = tuple(map(itemgetter(0), varstacks))
         self.name = name or self.__class__.__name__.lower()
         self.requirements = defaultdict(lambda: 0)
         for s, c in varstacks:
             self.requirements[s] += c
-        self.pattern = pattern
+        self.patterns = patterns
         self.precondition = precondition
 
     def __repr__(self):
         return "Operation(%s)" % self.display()
 
     def compile(self, arguments, results):
-        if self.pattern is None:
+        if self.patterns is None:
             invocation = "{0}({1})".format(self.name, ', '.join(arguments))
-        else:
-            invocation = self.pattern.format(*arguments)
-
-        if results:
             return ["%s = %s" % (', '.join(results), invocation)]
         else:
-            return [invocation]
+            patterns = self.patterns
+            if results:
+                patterns = list(patterns)
+                patterns[-1] = "%s = %s" % (', '.join(results), patterns[-1])
+            return [
+                pattern.format(*arguments)
+                for pattern in patterns
+            ]
 
     def args(self):
         return self.varstacks
@@ -60,24 +65,40 @@ class Operation(OperationOrLanguage):
 
 class ReadAndWrite(Operation):
     def __init__(
-        self, function, argspec, target=None, name=None, precondition=None,
-        pattern=None
+        self, function, argspec, target=None, targets=None, name=None,
+        precondition=None, pattern=None, patterns=None,
     ):
+        if target and targets:
+            raise ValueError(
+                "Cannot specify both a single and multiple targets"
+            )
+        if target is not None:
+            targets = (target,)
+            self.single_target = True
+        else:
+            self.single_target = False
+
         super(ReadAndWrite, self).__init__(
             _counts(argspec),
             name or function.__name__,
+            patterns=patterns,
             pattern=pattern,
             precondition=precondition,
         )
         self.function = function
         self.argspec = argspec
-        self.target = target
+        self.targets = targets
 
     def invoke(self, context):
-        args = [context.varstack(n).pop() for n in self.argspec]
+        args = context.read(self.argspec)
         result = self.function(*args)
-        if self.target is not None:
-            context.varstack(self.target).push(result)
+        if self.targets:
+            if self.single_target:
+                context.varstack(self.targets[0]).push(result)
+            else:
+                assert len(self.targets) == len(result)
+                for target, v in zip(self.targets, result):
+                    context.varstack(target).push(v)
 
 
 class Mutate(Operation):
@@ -134,23 +155,19 @@ class UnaryOperator(ReadAndWrite):
 
 
 class Check(Operation):
-    def __init__(self, test, argspec, name=None, pattern=None):
+    def __init__(self, test, argspec, name=None, pattern=None, patterns=None):
         name = name or test.__name__
-        if not pattern:
+        if pattern is None and patterns is None:
             arg_string = ', '.join(
                 ["{%d}" % (x,) for x in range(len(argspec))]
             )
             pattern = "assert %s(%s)" % (name, arg_string)
 
         super(Check, self).__init__(
-            _counts(argspec), name=name, pattern=pattern
+            _counts(argspec), name=name, pattern=pattern, patterns=patterns
         )
         self.argspec = argspec
         self.test = test
-
-    def compile(self, arguments, results):
-        assert not results
-        return [self.pattern.format(*arguments)]
 
     def invoke(self, context):
         args = context.read(self.argspec)
@@ -171,14 +188,18 @@ class SingleStackOperation(Operation):
 
 
 class Push(SingleStackOperation):
-    def __init__(self, varstack, gen_value):
+    def __init__(self, varstack, gen_value, value_formatter=None):
         super(Push, self).__init__(varstack, name="push")
         self.gen_value = gen_value
+        self.value_formatter = value_formatter or repr
 
     def compile(self, arguments, results):
         assert not arguments
         assert len(results) == 1
-        return ["%s = %r" % (results[0], self.gen_value())]
+        v = self.gen_value()
+        return [
+            "%s = %s" % (results[0], self.value_formatter(v))
+        ]
 
     def invoke(self, context):
         context.varstack(self.varstack).push(self.gen_value())
@@ -208,10 +229,11 @@ class Language(OperationOrLanguage):
 
 
 class PushRandom(Language):
-    def __init__(self, produce, target, name=None):
+    def __init__(self, produce, target, name=None, value_formatter=None):
         super(PushRandom, self).__init__()
         self.produce = produce
         self.target = target
+        self.value_formatter = value_formatter
 
     def generate(self, context):
         state = context.random.getstate()
@@ -223,6 +245,7 @@ class PushRandom(Language):
         return Push(
             self.target,
             gen_result,
+            value_formatter=self.value_formatter,
         )
 
 

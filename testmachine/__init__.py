@@ -1,3 +1,3 @@
-from .testmachine import TestMachine
+from .testmachine import TestMachine, consume
 
-__all__ = ['TestMachine']
+__all__ = ['TestMachine', 'consume']
