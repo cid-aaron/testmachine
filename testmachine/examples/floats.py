@@ -50,4 +50,4 @@ machine.add(check(associative_add, ("floats", "floats", "floats")))
 if __name__ == '__main__':
     # Attempt to find a falsifying example for the problem we've defined and
     # print it to stdout. If this cannot find any examples (it will), say so.
-    machine.run()
+    machine.main()

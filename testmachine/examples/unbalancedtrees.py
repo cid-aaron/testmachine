@@ -88,4 +88,4 @@ machine.add(check(
 ))
 
 if __name__ == '__main__':
-    machine.run()
+    machine.main()

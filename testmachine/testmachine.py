@@ -4,6 +4,7 @@ from .operations import (
 )
 from collections import namedtuple, defaultdict
 import traceback
+import argparse
 
 
 ProgramStep = namedtuple(
@@ -162,6 +163,51 @@ class TestMachine(object):
         if self.print_output:
             print(message)
 
+    def __repr__(self):
+        return "TestMachine()"
+
+    def main(self, args=None):
+        parser = argparse.ArgumentParser(description='Run a testmachine')
+        parser.add_argument(
+            '--trial-run', help="Generate a single example program and exit",
+            action="store_true", default=False
+        )
+        parser.add_argument(
+            "-p", "--program-length",
+            type=int, default=self.prog_length,
+            help="Size of programs to generate",
+        )
+        parser.add_argument(
+            "-i", "--iterations",
+            type=int, default=self.n_iters,
+            help="Number of iterations to run",
+        )
+
+        results = parser.parse_args(args)
+        self.prog_length = results.program_length
+        if results.trial_run:
+            self.trial_run()
+        else:
+            self.n_iters = results.iterations
+            self.run()
+
+    def print_execution_log(self, context):
+        for step in context.log:
+            statements = step.operation.compile(
+                arguments=step.arguments, results=step.definitions
+            )
+            for statement in statements:
+                self.inform(statement)
+
+    def trial_run(self):
+        context = RunContext()
+        try:
+            for _ in xrange(self.prog_length):
+                operation = self.language.generate(context)
+                context.execute(operation)
+        finally:
+            self.print_execution_log(context)
+
     def run(self):
         """
         run this testmachine and attempt to produce a failing program. Returns
@@ -183,13 +229,7 @@ class TestMachine(object):
         except Exception:
             pass
 
-        for step in context.log:
-            statements = step.operation.compile(
-                arguments=step.arguments, results=step.definitions
-            )
-            for statement in statements:
-                self.inform(statement)
-
+        self.print_execution_log(context)
         if self.print_output:
             try:
                 self.run_program(minimal)
@@ -219,7 +259,7 @@ class TestMachine(object):
                 operation = self.language.generate(context)
                 program.append(operation)
                 try:
-                    operation.invoke(context)
+                    context.execute(operation)
                 except Exception:
                     examples_found += 1
                     if (
@@ -258,7 +298,7 @@ class TestMachine(object):
                 continue
             results.append(operation)
             try:
-                operation.invoke(context)
+                context.execute(operation)
             except Exception:
                 break
 

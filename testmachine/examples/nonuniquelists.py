@@ -28,4 +28,4 @@ machine.add(
 
 if __name__ == '__main__':
     # Find a program that creates a list with non-unique elements.
-    machine.run()
+    machine.main()

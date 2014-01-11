@@ -24,4 +24,4 @@ machine.add(
 )
 
 if __name__ == '__main__':
-    machine.run()
+    machine.main()
