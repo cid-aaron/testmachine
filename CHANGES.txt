@@ -1,4 +1,22 @@
-v0.0.1, 08/01/2013 -- Initial release. Basic working prototype. Demonstrates idea, probably shouldn't be used.
-v0.0.2, 08/01/2013 -- Remove bundles of operations from core testmachine and move them into testmachine.common.
-                      Fix some issues with formatting patterns for check operations.
-v0.0.3, 09/01/2012 -- Support for more python versions (2.6 through 3.3 + pypy). Remove need to deepcopy generated values.
+v0.0.1, 08/01/2014 
+  - Initial release. Basic working prototype. Demonstrates idea, probably shouldn't be used.
+
+v0.0.2, 08/01/2014 
+  - Remove bundles of operations from core testmachine and move them into testmachine.common.
+  - Fix some issues with formatting patterns for check operations.
+
+v0.0.3, 09/01/2014 
+  - Support for more python versions (2.6 through 3.3 + pypy).
+  - Remove need to deepcopy generated values.
+
+v0.0.4, 12/01/2014
+  - Switch to using string format instead of % for patterns
+  - Allow operations to define multiple patterns
+  - Allow generate to define a custom formatter for the generated values instead of forcing you to use repr
+  - Change API of common operations. Instead of passing the machine in then return a thing you can add to it.
+  - Allow operations to return values to multiple varstacks
+  - Operations can declare that they consume their input
+  - Fix a bug with python 3 support which would cause an error when no program was found
+  - Fix a bug where errors in generator functions would be hidden
+  - Provide a very simple command line interface to testmachine programs
+  - Remove the Varstack#freeze method. It seemed like a good idea but wasn't actually used.

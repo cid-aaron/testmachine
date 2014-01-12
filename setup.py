@@ -20,7 +20,7 @@ if sys.version_info >= (3,):
 
 setup(
     name='testmachine',
-    version='0.0.3',
+    version='0.0.4',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=['testmachine'],
